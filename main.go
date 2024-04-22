@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/png"
+	"image/gif"
 	"math"
 	"os"
 )
@@ -19,89 +19,85 @@ func DrawLSystem(name, axiom string, rules map[rune]string, iterations int, angl
 		height = 800
 	)
 
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			img.Set(x, y, color.White)
-		}
-	}
-
 	angle = angle * math.Pi / 180
 
 	turtle := Turtle{x: startPosX, y: startPosY, heading: 0.0}
 
-	newX := turtle.x + 10*math.Cos(turtle.heading)
-	newY := turtle.y + 10*math.Sin(turtle.heading)
-	drawLine(img, int(turtle.x), int(turtle.y), int(newX), int(newY), color.RGBA{B: 255, A: 255})
-	turtle.x = newX
-	turtle.y = newY
+	var frames []*image.Paletted
 
-	var stack []Turtle
+	for iter := 0; iter <= iterations; iter++ {
+		img := image.NewPaletted(image.Rect(0, 0, width, height), color.Palette{color.White})
 
-	for i := 0; i < iterations; i++ {
-		nextAxiom := ""
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				img.Set(x, y, color.White)
+			}
+		}
+
+		turtleCopy := turtle
+
 		for _, char := range axiom {
-			if rule, ok := rules[char]; ok {
-				nextAxiom += rule
-			} else {
-				nextAxiom += string(char)
+			switch char {
+			case 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				newX := turtleCopy.x + 10*math.Cos(turtleCopy.heading)
+				newY := turtleCopy.y + 10*math.Sin(turtleCopy.heading)
+				drawLine(img, int(turtleCopy.x), int(turtleCopy.y), int(newX), int(newY))
+				turtleCopy.x = newX
+				turtleCopy.y = newY
+			case '+':
+				turtleCopy.heading -= angle
+			case '-':
+				turtleCopy.heading += angle
+			case '|':
+				turtleCopy.heading += 180
+			case '[':
+				// Not supported in this example
+			case ']':
+				// Not supported in this example
 			}
 		}
-		axiom = nextAxiom
+
+		frames = append(frames, img)
+
+		axiom = applyRules(axiom, rules)
 	}
 
-	for i, char := range axiom {
-		if i == 0 {
-			continue
-		}
-		switch char {
-		case 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			newX := turtle.x + 10*math.Cos(turtle.heading)
-			newY := turtle.y + 10*math.Sin(turtle.heading)
-			drawLine(img, int(turtle.x), int(turtle.y), int(newX), int(newY), color.RGBA{B: 255, A: 255})
-			turtle.x = newX
-			turtle.y = newY
-		case '+':
-			turtle.heading -= angle
-		case '-':
-			turtle.heading += angle
-		case '|':
-			turtle.heading += 180
-		case '[':
-			stack = append(stack, turtle)
-		case ']':
-			if len(stack) > 0 {
-				turtle = stack[len(stack)-1]
-				stack = stack[:len(stack)-1]
-			}
-		}
-	}
-
-	file, err := os.Create(name + ".png")
+	file, err := os.Create(name + ".gif")
 	if err != nil {
-		fmt.Println("Chyba při vytváření souboru:", err)
+		fmt.Println("Error creating file:", err)
 		return
 	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}(file)
+	defer file.Close()
 
-	if err := png.Encode(file, img); err != nil {
-		fmt.Println("Chyba při ukládání obrázku:", err)
+	delays := make([]int, len(frames))
+	for i := range delays {
+		delays[i] = 100
 	}
-	fmt.Println("L-systém byl vykreslen do souboru " + name + ".png")
+	gif.EncodeAll(file, &gif.GIF{
+		Image: frames,
+		Delay: delays,
+	})
+	fmt.Println("L-system animation was saved to", name+".gif")
 }
 
-func drawLine(img *image.RGBA, x1, y1, x2, y2 int, col color.Color) {
+func applyRules(axiom string, rules map[rune]string) string {
+	result := ""
+	for _, char := range axiom {
+		if rule, ok := rules[char]; ok {
+			result += rule
+		} else {
+			result += string(char)
+		}
+	}
+	return result
+}
+
+func drawLine(img *image.Paletted, x1, y1, x2, y2 int) {
 	dx := x2 - x1
 	dy := y2 - y1
 
 	if dx == 0 && dy == 0 {
-		img.Set(x1, y1, col)
+		img.SetColorIndex(x1, y1, 1)
 		return
 	}
 
@@ -112,7 +108,7 @@ func drawLine(img *image.RGBA, x1, y1, x2, y2 int, col color.Color) {
 
 	x, y := float64(x1), float64(y1)
 	for i := 0; i <= int(steps); i++ {
-		img.Set(int(x+0.5), int(y+0.5), col)
+		img.SetColorIndex(int(x+0.5), int(y+0.5), 1)
 		x += xIncrement
 		y += yIncrement
 	}

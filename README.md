@@ -27,3 +27,6 @@ go run main.go
 &nbsp; &nbsp; &nbsp; &nbsp;
   <img alt="" src="./LSystemsGifs&Pics/Snowflake.png" width="45%">
 </p>
+<p align="center">
+  <img alt="" src="./LSystemsGifs&Pics/Kdo ví co.gif" width="45%">
+</p>

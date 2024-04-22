@@ -22,7 +22,7 @@ func DrawLSystem(name, axiom string, rules map[rune]string, iterations int, angl
 	angle = angle * math.Pi / 180
 
 	turtle := Turtle{x: startPosX, y: startPosY, heading: 0.0}
-
+	var stack []Turtle
 	var frames []*image.Paletted
 
 	for iter := 0; iter <= iterations; iter++ {
@@ -51,9 +51,12 @@ func DrawLSystem(name, axiom string, rules map[rune]string, iterations int, angl
 			case '|':
 				turtleCopy.heading += 180
 			case '[':
-				// Not supported in this example
+				stack = append(stack, turtle)
 			case ']':
-				// Not supported in this example
+				if len(stack) > 0 {
+					turtle = stack[len(stack)-1]
+					stack = stack[:len(stack)-1]
+				}
 			}
 		}
 
@@ -128,7 +131,7 @@ func main() {
 		{"Dragon curve", "F", map[rune]string{'F': "F+G", 'G': "F-G"}, 10, 90.0, 300.0, 500.0},
 		{"Sierpinski triangle", "F-G-G", map[rune]string{'F': "F-G+F+G-F", 'G': "GG"}, 4, 120.0, 200.0, 400.0},
 		{"Snowflake", "F++F++F++F++F", map[rune]string{'F': "F++F++F+++++F-F++F"}, 4, 36.0, 150.0, 750.0},
-		{"Kdo ví co", "F", map[rune]string{'F': "F++F+F--"}, 5, 20.0, 200.0, 200.0},
+		{"Kdo ví co", "G", map[rune]string{'G': "F+F-G[-G]", 'F': "F-F"}, 4, 25.0, 400.0, 400.0},
 	}
 
 	for _, lsystem := range lsystems {

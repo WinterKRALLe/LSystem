@@ -13,10 +13,10 @@ type Turtle struct {
 	x, y, heading float64
 }
 
-func DrawLSystem(axiom string, rules map[rune]string, iterations int, angle float64) {
+func DrawLSystem(name, axiom string, rules map[rune]string, iterations int, angle float64, startPosX, startPosY float64) {
 	const (
 		width  = 800
-		height = 600
+		height = 800
 	)
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
@@ -26,17 +26,16 @@ func DrawLSystem(axiom string, rules map[rune]string, iterations int, angle floa
 			img.Set(x, y, color.White)
 		}
 	}
+
 	angle = angle * math.Pi / 180
 
-	turtle := Turtle{x: 400.0, y: 300.0, heading: 0.0}
+	turtle := Turtle{x: startPosX, y: startPosY, heading: 0.0}
 
-	// Zde umístěte kreslení, které má být provedeno ihned
 	newX := turtle.x + 10*math.Cos(turtle.heading)
 	newY := turtle.y + 10*math.Sin(turtle.heading)
 	drawLine(img, int(turtle.x), int(turtle.y), int(newX), int(newY), color.RGBA{B: 255, A: 255})
 	turtle.x = newX
 	turtle.y = newY
-	// Konec umístění kreslení
 
 	var stack []Turtle
 
@@ -57,7 +56,7 @@ func DrawLSystem(axiom string, rules map[rune]string, iterations int, angle floa
 			continue
 		}
 		switch char {
-		case 'F':
+		case 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			newX := turtle.x + 10*math.Cos(turtle.heading)
 			newY := turtle.y + 10*math.Sin(turtle.heading)
 			drawLine(img, int(turtle.x), int(turtle.y), int(newX), int(newY), color.RGBA{B: 255, A: 255})
@@ -79,7 +78,7 @@ func DrawLSystem(axiom string, rules map[rune]string, iterations int, angle floa
 		}
 	}
 
-	file, err := os.Create("lsystem.png")
+	file, err := os.Create(name + ".png")
 	if err != nil {
 		fmt.Println("Chyba při vytváření souboru:", err)
 		return
@@ -94,7 +93,7 @@ func DrawLSystem(axiom string, rules map[rune]string, iterations int, angle floa
 	if err := png.Encode(file, img); err != nil {
 		fmt.Println("Chyba při ukládání obrázku:", err)
 	}
-	fmt.Println("L-systém byl vykreslen do souboru lsystem.png")
+	fmt.Println("L-systém byl vykreslen do souboru " + name + ".png")
 }
 
 func drawLine(img *image.RGBA, x1, y1, x2, y2 int, col color.Color) {
@@ -120,12 +119,22 @@ func drawLine(img *image.RGBA, x1, y1, x2, y2 int, col color.Color) {
 }
 
 func main() {
-	axiom := "F"
-	rules := map[rune]string{
-		'F': "F+F-F-F+F",
+	lsystems := []struct {
+		name       string
+		axiom      string
+		rules      map[rune]string
+		iterations int
+		angle      float64
+		startPosX  float64
+		startPosY  float64
+	}{
+		{"Koch curve", "F", map[rune]string{'F': "F+F-F-F+F"}, 3, 90.0, 200.0, 400.0},
+		{"Dragon curve", "F", map[rune]string{'F': "F+G", 'G': "F-G"}, 10, 90.0, 300.0, 500.0},
+		{"Sierpinski triangle", "F-G-G", map[rune]string{'F': "F-G+F+G-F", 'G': "GG"}, 4, 120.0, 200.0, 400.0},
+		{"Snowflake", "F++F++F++F++F", map[rune]string{'F': "F++F++F+++++F-F++F"}, 4, 36.0, 150.0, 750.0},
 	}
-	iterations := 3
-	angle := 90.0
 
-	DrawLSystem(axiom, rules, iterations, angle)
+	for _, lsystem := range lsystems {
+		DrawLSystem(lsystem.name, lsystem.axiom, lsystem.rules, lsystem.iterations, lsystem.angle, lsystem.startPosX, lsystem.startPosY)
+	}
 }
